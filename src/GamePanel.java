@@ -1,6 +1,8 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.font.FontRenderContext;
+import java.awt.geom.Rectangle2D;
 import java.util.Random;
 
 public class GamePanel extends JPanel implements ActionListener{
@@ -8,22 +10,23 @@ public class GamePanel extends JPanel implements ActionListener{
     static final int HEIGHT = 600;
     static final int UNIT_SIZE = 30;
     static final int GAME_UNITS = (WIDTH * HEIGHT) / UNIT_SIZE;
-    static final int DELAY = 65;
+    static final int DELAY = 75;
     final int[] snakeX = new int[GAME_UNITS];
     final int[] snakeY = new int[GAME_UNITS];
-    int bodyParts = 1;
+    int bodyParts = 2;
     int score = 0;
     Coordinates apple;
     enum dirs {LEFT, RIGHT, UP, DOWN}
     dirs direction = dirs.RIGHT;
     boolean running = false;
     Timer timer;
+    boolean paused = true;
     Random random;
 
     GamePanel(){
         random = new Random();
         this.setPreferredSize(new Dimension(WIDTH, HEIGHT));
-        this.setBackground(new Color(0x535953));
+        this.setBackground(new Color(0x43524B));
         this.setFocusable(true);
         this.addKeyListener(new MyKeyAdapter());
         startGame();
@@ -33,7 +36,8 @@ public class GamePanel extends JPanel implements ActionListener{
         newApple();
         running = true;
         timer = new Timer(DELAY, this);
-        timer.start();
+        //timer.start();
+
     }
 
     public void paintComponent(Graphics g){
@@ -42,33 +46,33 @@ public class GamePanel extends JPanel implements ActionListener{
     }
 
     public void draw(Graphics g){
-        //GRID
+        /* //GRID
         for (int i = 0; i < HEIGHT / UNIT_SIZE; i++) {
             g.drawLine(i*UNIT_SIZE, 0, i*UNIT_SIZE, HEIGHT);
             g.drawLine(0, i*UNIT_SIZE, WIDTH, i*UNIT_SIZE);
-        }
+        }*/
 
-        g.setColor(new Color(0xCE2929));
-        g.fillOval(apple.getX(), apple.getY(), UNIT_SIZE, UNIT_SIZE);
-        for (int i = 0;  i < bodyParts; i++) {
-            if(i == 0){
-                g.setColor(new Color(0x00C516));
-                g.fillRect(snakeX[0], snakeY[0], UNIT_SIZE, UNIT_SIZE);
-            }
-            else{
-                g.setColor(new Color(0x3E8047));
-                g.fillRect(snakeX[i], snakeY[i], UNIT_SIZE, UNIT_SIZE);
+        if(running){
+            g.setColor(new Color(0xB05F53));
+            g.fillOval(apple.getX(), apple.getY(), UNIT_SIZE, UNIT_SIZE);
+            for (int i = 0;  i < bodyParts; i++) {
+                if(i == 0){
+                    g.setColor(new Color(0x54BD4F));
+                    g.fillRect(snakeX[0], snakeY[0], UNIT_SIZE, UNIT_SIZE);
+                }
+                else{
+                    g.setColor(new Color(0x54C770));
+                    g.fillRect(snakeX[i], snakeY[i], UNIT_SIZE, UNIT_SIZE);
+                }
             }
         }
+        else gameOver(g);
     }
 
-    /**
-     * GENERUJE NOWE JABŁKO
-     */
     public void newApple(){
         boolean valid = false;
 
-        checkIfcorrect:
+        checkIfCorrect:
         do{
             int x = random.nextInt(WIDTH/UNIT_SIZE) * UNIT_SIZE;
             int y = random.nextInt(HEIGHT/UNIT_SIZE)* UNIT_SIZE;
@@ -76,7 +80,8 @@ public class GamePanel extends JPanel implements ActionListener{
             for (int i = 0; i < bodyParts; i++) {
                 if(snakeX[i] == x && snakeY[i] == y){
                     valid = false;
-                    continue checkIfcorrect;
+
+                    continue checkIfCorrect;
                 }
                 else valid = true;
             }
@@ -116,10 +121,20 @@ public class GamePanel extends JPanel implements ActionListener{
         }
     }
 
-    public void gameOver(){
-        System.out.println("GAME OVER");
-        System.out.println("Score: " + score);
-        // TODO wyswietlenie informacji o koncu rozgrywki, liczby punktow i pytanie o powtóre rozegranie albo wyjscie
+    public void gameOver(Graphics g){
+        Image image = new ImageIcon("img/GameOver.png").getImage();
+        int x = (WIDTH - image.getWidth(null)) / 2;
+        g.drawImage(image, x, 10, null);
+        String scoreInfo = "Score: " + score;
+        g.setColor(new Color(0x65C27B));
+
+        var font = new Font("Rubik Black", Font.PLAIN, 30);
+        g.setFont(font);
+        var g2 = (Graphics2D) g;
+        FontRenderContext context = g2.getFontRenderContext();
+        Rectangle2D bounds = font.getStringBounds(scoreInfo, context);
+        x = (int)((WIDTH - bounds.getWidth()) / 2);
+        g.drawString(scoreInfo, x, image.getHeight(null) + 30);
     }
     @Override
     public void actionPerformed(ActionEvent e){
@@ -128,7 +143,6 @@ public class GamePanel extends JPanel implements ActionListener{
             checkApple();
             checkCollisions();
         }
-        else gameOver();
         repaint();
     }
 
@@ -137,20 +151,33 @@ public class GamePanel extends JPanel implements ActionListener{
         public void keyPressed(KeyEvent e){
             switch (e.getKeyCode()){
                 case 37 -> {
-                    if(direction != dirs.RIGHT)
-                        direction = dirs.LEFT;
+                    if(!paused)
+                        if(direction != dirs.RIGHT)
+                            direction = dirs.LEFT;
                 }
                 case 38 -> {
-                    if(direction != dirs.DOWN)
-                        direction = dirs.UP;
+                    if(!paused)
+                        if(direction != dirs.DOWN)
+                            direction = dirs.UP;
                 }
                 case 39 -> {
-                    if(direction != dirs.LEFT)
-                        direction = dirs.RIGHT;
+                    if(!paused)
+                        if(direction != dirs.LEFT)
+                            direction = dirs.RIGHT;
                 }
                 case 40 ->{
-                    if(direction != dirs.UP)
-                        direction = dirs.DOWN;
+                    if(!paused)
+                        if(direction != dirs.UP)
+                            direction = dirs.DOWN;
+                }
+                case 32 ->{
+                    if(!paused){
+                        timer.stop();
+                    }
+                    else{
+                        timer.start();
+                    }
+                    paused = !paused;
                 }
             }
         }
