@@ -8,50 +8,67 @@ import java.util.Random;
 public class GamePanel extends JPanel implements ActionListener{
     static final int WIDTH = 600;
     static final int HEIGHT = 600;
-    static final int UNIT_SIZE = 30;
+    static final int UNIT_SIZE = 40;
     static final int GAME_UNITS = (WIDTH * HEIGHT) / UNIT_SIZE;
     static final int DELAY = 75;
-    final int[] snakeX = new int[GAME_UNITS];
-    final int[] snakeY = new int[GAME_UNITS];
-    int bodyParts = 2;
-    int score = 0;
-    Coordinates apple;
-    enum dirs {LEFT, RIGHT, UP, DOWN}
-    dirs direction = dirs.RIGHT;
-    boolean running = false;
-    Timer timer;
-    boolean paused = true;
-    Random random;
+    private final int[] snakeX = new int[GAME_UNITS];
+    private final int[] snakeY = new int[GAME_UNITS];
+    private int bodyParts = 2;
+    private int score = 0;
+    private Coordinates apple;
+    private enum dirs {LEFT, RIGHT, UP, DOWN}
+    private dirs direction = dirs.RIGHT;
+    private boolean running = false;
+    private Timer timer;
+    private boolean paused = true;
+    private Random random;
+    static int counter = 0;
 
+    private JPanel buttonPanel = new JPanel(new GridLayout(2,1));
+    private JButton exitButton = new JButton("Exit to main menu");
+    private JButton retryButton = new JButton("Play again");
     GamePanel(){
+        System.out.println("New game: " + ++counter);
         random = new Random();
-        this.setPreferredSize(new Dimension(WIDTH, HEIGHT));
-        this.setBackground(new Color(0x43524B));
-        this.setFocusable(true);
-        this.addKeyListener(new MyKeyAdapter());
+        setPreferredSize(new Dimension(WIDTH, HEIGHT));
+        setBackground(new Color(0x43524B));
+        setFocusable(true);
+        addKeyListener(new MyKeyAdapter());
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentShown(ComponentEvent e) {
+                requestFocusInWindow();
+            }
+        });
+        buttonPanel.add(exitButton);
+        buttonPanel.add(retryButton);
+
+        add(buttonPanel);
+        buttonPanel.setVisible(false);
         startGame();
     }
 
     public void startGame(){
+        GameFrame.setState(State.IN_GAME);
         newApple();
         running = true;
         timer = new Timer(DELAY, this);
-        //timer.start();
 
     }
 
     public void paintComponent(Graphics g){
         super.paintComponent(g);
-        draw(g);
+        if(paused) {
+            pause(g);
+        }
+        else{
+            draw(g);
+        }
+
+
     }
 
     public void draw(Graphics g){
-        /* //GRID
-        for (int i = 0; i < HEIGHT / UNIT_SIZE; i++) {
-            g.drawLine(i*UNIT_SIZE, 0, i*UNIT_SIZE, HEIGHT);
-            g.drawLine(0, i*UNIT_SIZE, WIDTH, i*UNIT_SIZE);
-        }*/
-
         if(running){
             g.setColor(new Color(0xB05F53));
             g.fillOval(apple.getX(), apple.getY(), UNIT_SIZE, UNIT_SIZE);
@@ -65,6 +82,7 @@ public class GamePanel extends JPanel implements ActionListener{
                     g.fillRect(snakeX[i], snakeY[i], UNIT_SIZE, UNIT_SIZE);
                 }
             }
+
         }
         else gameOver(g);
     }
@@ -120,7 +138,23 @@ public class GamePanel extends JPanel implements ActionListener{
             if((snakeX[0]< 0) || (snakeY[0]  < 0)) running = false;
         }
     }
+    public void pause(Graphics g){
+        Image image = new ImageIcon("img/pause.png").getImage();
+        int x = (WIDTH - image.getWidth(null)) / 2;
+        int y = (HEIGHT - image.getHeight(null)) / 2;
+        g.drawImage(image, x, y, null);
 
+        String pauseInfo = "Press space to continue";
+        var font = new Font("Rubik Bold", Font.PLAIN, 20);
+        g.setColor(new Color(0x65C27B));
+        g.setFont(font);
+        var g2 = (Graphics2D) g;
+        FontRenderContext context = g2.getFontRenderContext();
+        Rectangle2D bounds = font.getStringBounds(pauseInfo, context);
+        x = (int)((WIDTH - bounds.getWidth()) / 2);
+        g.drawString(pauseInfo, x, image.getHeight(null) + y + 40);
+
+    }
     public void gameOver(Graphics g){
         Image image = new ImageIcon("img/GameOver.png").getImage();
         int x = (WIDTH - image.getWidth(null)) / 2;
@@ -135,6 +169,8 @@ public class GamePanel extends JPanel implements ActionListener{
         Rectangle2D bounds = font.getStringBounds(scoreInfo, context);
         x = (int)((WIDTH - bounds.getWidth()) / 2);
         g.drawString(scoreInfo, x, image.getHeight(null) + 30);
+
+        GameFrame.setState(State.GAME_OVER);
     }
     @Override
     public void actionPerformed(ActionEvent e){
@@ -149,36 +185,45 @@ public class GamePanel extends JPanel implements ActionListener{
     public class MyKeyAdapter extends KeyAdapter {
         @Override
         public void keyPressed(KeyEvent e){
-            switch (e.getKeyCode()){
-                case 37 -> {
-                    if(!paused)
-                        if(direction != dirs.RIGHT)
-                            direction = dirs.LEFT;
-                }
-                case 38 -> {
-                    if(!paused)
-                        if(direction != dirs.DOWN)
-                            direction = dirs.UP;
-                }
-                case 39 -> {
-                    if(!paused)
-                        if(direction != dirs.LEFT)
-                            direction = dirs.RIGHT;
-                }
-                case 40 ->{
-                    if(!paused)
-                        if(direction != dirs.UP)
-                            direction = dirs.DOWN;
-                }
-                case 32 ->{
-                    if(!paused){
-                        timer.stop();
+            if(GameFrame.getCurrentState() == State.IN_GAME){
+                switch (e.getKeyCode()){
+                    case 37 -> {
+                        if(!paused)
+                            if(direction != dirs.RIGHT)
+                                direction = dirs.LEFT;
                     }
-                    else{
-                        timer.start();
+                    case 38 -> {
+                        if(!paused)
+                            if(direction != dirs.DOWN)
+                                direction = dirs.UP;
                     }
-                    paused = !paused;
+                    case 39 -> {
+                        if(!paused)
+                            if(direction != dirs.LEFT)
+                                direction = dirs.RIGHT;
+                    }
+                    case 40 ->{
+                        if(!paused)
+                            if(direction != dirs.UP)
+                                direction = dirs.DOWN;
+                    }
+                    case 32 ->{
+                        if(!paused){
+                            timer.stop();
+                        }
+                        else{
+                            timer.start();
+                        }
+                        paused = !paused;
+                    }
                 }
+            }
+            if(GameFrame.getCurrentState() == State.GAME_OVER){
+                switch (e.getKeyCode()){
+                    case 27 -> GameFrame.setState(State.MENU);
+                    case 32 -> GameFrame.setState(State.GAME);
+                }
+                GameFrame.changePanel();
             }
         }
     }
