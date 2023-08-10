@@ -9,9 +9,8 @@ public class GameFrame extends JFrame {
     private static final String GAME_PANEL = "Game";
     private static CardLayout layout = new CardLayout();
     private static JPanel panel = new JPanel(layout);
-    private static GamePanel game = new GamePanel();
+    private static GamePanel game = new GamePanel("temp");
     private static MenuPanel menu = new MenuPanel();
-    static int counter = 0;
 
     GameFrame(){
         panel.add(game, "game");
@@ -29,11 +28,12 @@ public class GameFrame extends JFrame {
     public static void changePanel(){
         switch(currentState){
             case GAME -> {
+                String nickname = menu.getNickname();
                 panel.remove(menu);
                 panel.repaint();
                 panel.revalidate();
                 panel.remove(game);
-                game = new GamePanel();
+                game = new GamePanel(nickname);
 
                 panel.add(game);
                 panel.repaint();

@@ -15,6 +15,7 @@ public class GamePanel extends JPanel implements ActionListener{
     private final int[] snakeY = new int[GAME_UNITS];
     private int bodyParts = 2;
     private int score = 0;
+    private String nickname;
     private Coordinates apple;
     private enum dirs {LEFT, RIGHT, UP, DOWN}
     private dirs direction = dirs.RIGHT;
@@ -27,7 +28,8 @@ public class GamePanel extends JPanel implements ActionListener{
     private JPanel buttonPanel = new JPanel(new GridLayout(2,1));
     private JButton exitButton = new JButton("Exit to main menu");
     private JButton retryButton = new JButton("Play again");
-    GamePanel(){
+    GamePanel(String nickname){
+        this.nickname = nickname;
         System.out.println("New game: " + ++counter);
         random = new Random();
         setPreferredSize(new Dimension(WIDTH, HEIGHT));
@@ -171,6 +173,7 @@ public class GamePanel extends JPanel implements ActionListener{
         g.drawString(scoreInfo, x, image.getHeight(null) + 30);
 
         GameFrame.setState(State.GAME_OVER);
+        System.out.println("Game no: " + counter + ", player: " + nickname + ", score: " + score);
     }
     @Override
     public void actionPerformed(ActionEvent e){
