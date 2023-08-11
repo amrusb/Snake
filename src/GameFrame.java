@@ -2,6 +2,10 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class GameFrame extends JFrame {
     private static State currentState = State.MENU;
@@ -9,7 +13,7 @@ public class GameFrame extends JFrame {
     private static final String GAME_PANEL = "Game";
     private static CardLayout layout = new CardLayout();
     private static JPanel panel = new JPanel(layout);
-    private static GamePanel game = new GamePanel("temp");
+    private static GamePanel game = new GamePanel("temp", 0);
     private static MenuPanel menu = new MenuPanel();
 
     GameFrame(){
@@ -28,12 +32,15 @@ public class GameFrame extends JFrame {
     public static void changePanel(){
         switch(currentState){
             case GAME -> {
-                String nickname = menu.getNickname();
                 panel.remove(menu);
                 panel.repaint();
                 panel.revalidate();
                 panel.remove(game);
-                game = new GamePanel(nickname);
+                String nickname = menu.getNickname();
+                var temp = menu.readLeaderboard().entrySet();
+                int current_high_score = 0;
+                if(!temp.isEmpty()) current_high_score = temp.iterator().next().getValue();
+                game = new GamePanel(nickname, current_high_score);
 
                 panel.add(game);
                 panel.repaint();

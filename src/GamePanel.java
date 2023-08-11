@@ -3,6 +3,13 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.font.FontRenderContext;
 import java.awt.geom.Rectangle2D;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.Random;
 
 public class GamePanel extends JPanel implements ActionListener{
@@ -15,22 +22,19 @@ public class GamePanel extends JPanel implements ActionListener{
     private final int[] snakeY = new int[GAME_UNITS];
     private int bodyParts = 2;
     private int score = 0;
-    private String nickname;
+    private final String nickname;
     private Coordinates apple;
     private enum dirs {LEFT, RIGHT, UP, DOWN}
     private dirs direction = dirs.RIGHT;
     private boolean running = false;
     private Timer timer;
     private boolean paused = true;
-    private Random random;
-    static int counter = 0;
+    private final Random random;
+    private final int current_high_score;
 
-    private JPanel buttonPanel = new JPanel(new GridLayout(2,1));
-    private JButton exitButton = new JButton("Exit to main menu");
-    private JButton retryButton = new JButton("Play again");
-    GamePanel(String nickname){
+    GamePanel(String nickname, int high_score){
         this.nickname = nickname;
-        System.out.println("New game: " + ++counter);
+        current_high_score = high_score;
         random = new Random();
         setPreferredSize(new Dimension(WIDTH, HEIGHT));
         setBackground(new Color(0x43524B));
@@ -42,11 +46,7 @@ public class GamePanel extends JPanel implements ActionListener{
                 requestFocusInWindow();
             }
         });
-        buttonPanel.add(exitButton);
-        buttonPanel.add(retryButton);
 
-        add(buttonPanel);
-        buttonPanel.setVisible(false);
         startGame();
     }
 
@@ -66,7 +66,6 @@ public class GamePanel extends JPanel implements ActionListener{
         else{
             draw(g);
         }
-
 
     }
 
@@ -155,12 +154,13 @@ public class GamePanel extends JPanel implements ActionListener{
         Rectangle2D bounds = font.getStringBounds(pauseInfo, context);
         x = (int)((WIDTH - bounds.getWidth()) / 2);
         g.drawString(pauseInfo, x, image.getHeight(null) + y + 40);
-
     }
     public void gameOver(Graphics g){
-        Image image = new ImageIcon("img/GameOver.png").getImage();
+        timer.stop();
+        Image image = new ImageIcon("img/game-over.png").getImage();
         int x = (WIDTH - image.getWidth(null)) / 2;
-        g.drawImage(image, x, 10, null);
+        int y = 40;
+        g.drawImage(image, x, y, null);
         String scoreInfo = "Score: " + score;
         g.setColor(new Color(0x65C27B));
 
@@ -170,10 +170,40 @@ public class GamePanel extends JPanel implements ActionListener{
         FontRenderContext context = g2.getFontRenderContext();
         Rectangle2D bounds = font.getStringBounds(scoreInfo, context);
         x = (int)((WIDTH - bounds.getWidth()) / 2);
-        g.drawString(scoreInfo, x, image.getHeight(null) + 30);
+        y =+ image.getHeight(null) + 100;
+        g.drawString(scoreInfo, x, y);
 
         GameFrame.setState(State.GAME_OVER);
-        System.out.println("Game no: " + counter + ", player: " + nickname + ", score: " + score);
+        if(score > current_high_score) {
+            image = new ImageIcon("img/new-high-score.png").getImage();
+            x = (WIDTH - image.getWidth(null)) / 2;
+            y += bounds.getHeight() + 10;
+            g.drawImage(image, x, y, null);
+        }
+        addScoreToFile();
+    }
+    private void addScoreToFile(){
+        String fileName = "leaderboard";
+        Path path = Paths.get(fileName );
+        File file = new File(fileName);
+
+        try{
+            BufferedWriter writer;
+            if(!file.exists()) {
+                file.createNewFile();
+                writer = Files.newBufferedWriter(path, StandardOpenOption.WRITE);
+                writer.write(nickname + "\t" + score);
+            }
+            else{
+                writer = Files.newBufferedWriter(path, StandardOpenOption.APPEND);
+                writer.write("\n"+nickname + "\t" + score);
+            }
+            writer.close();
+        }
+        catch (IOException e) {
+            System.out.println("An error occurred.");
+            e.printStackTrace();
+        }
     }
     @Override
     public void actionPerformed(ActionEvent e){
