@@ -13,11 +13,11 @@ import java.nio.file.StandardOpenOption;
 import java.util.Random;
 
 public class GamePanel extends JPanel implements ActionListener{
-    static final int WIDTH = 600;
-    static final int HEIGHT = 600;
-    static final int UNIT_SIZE = 40;
-    static final int GAME_UNITS = (WIDTH * HEIGHT) / UNIT_SIZE;
-    static final int DELAY = 75;
+    private static final int WIDTH = 600;
+    private static final int HEIGHT = 600;
+    private final int UNIT_SIZE = MenuPanel.getSizeOption();
+    private final int GAME_UNITS = (WIDTH * HEIGHT) / UNIT_SIZE;
+    private final int DELAY = MenuPanel.getSpeedOption();
     private final int[] snakeX = new int[GAME_UNITS];
     private final int[] snakeY = new int[GAME_UNITS];
     private int bodyParts = 2;
@@ -36,6 +36,7 @@ public class GamePanel extends JPanel implements ActionListener{
         this.nickname = nickname;
         current_high_score = high_score;
         random = new Random();
+
         setPreferredSize(new Dimension(WIDTH, HEIGHT));
         setBackground(new Color(0x43524B));
         setFocusable(true);

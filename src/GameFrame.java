@@ -1,16 +1,8 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
-import java.util.Optional;
-import java.util.OptionalInt;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class GameFrame extends JFrame {
     private static State currentState = State.MENU;
-    private static final String MENU_PANEL = "Menu";
-    private static final String GAME_PANEL = "Game";
     private static CardLayout layout = new CardLayout();
     private static JPanel panel = new JPanel(layout);
     private static GamePanel game = new GamePanel("temp", 0);
