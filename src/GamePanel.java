@@ -1,3 +1,5 @@
+import Utils.*;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -31,12 +33,18 @@ public class GamePanel extends JPanel implements ActionListener{
     private boolean paused = true;
     private final Random random;
     private final int current_high_score;
+    private Sound sound;
 
     GamePanel(String nickname, int high_score){
         this.nickname = nickname;
         current_high_score = high_score;
         random = new Random();
-
+        try{
+            sound = new Sound();
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
         setPreferredSize(new Dimension(WIDTH, HEIGHT));
         setBackground(new Color(0x43524B));
         setFocusable(true);
@@ -76,15 +84,15 @@ public class GamePanel extends JPanel implements ActionListener{
             g.fillOval(apple.getX(), apple.getY(), UNIT_SIZE, UNIT_SIZE);
             for (int i = 0;  i < bodyParts; i++) {
                 if(i == 0){
-                    g.setColor(new Color(0x54BD4F));
+                    g.setColor(new Color(0x54C770));
                     g.fillRect(snakeX[0], snakeY[0], UNIT_SIZE, UNIT_SIZE);
                 }
                 else{
-                    g.setColor(new Color(0x54C770));
+                    g.setColor(new Color(0x96D0A5));
                     g.fillRect(snakeX[i], snakeY[i], UNIT_SIZE, UNIT_SIZE);
                 }
             }
-
+            if(paused) System.out.println("DUPA BLADA");
         }
         else gameOver(g);
     }
@@ -129,6 +137,7 @@ public class GamePanel extends JPanel implements ActionListener{
         if((snakeX[0] == apple.getX() && snakeY[0] == apple.getY())){
             bodyParts++;
             score++;
+            sound.play(SoundTypes.POINT_GAINED);
             newApple();
         }
     }
@@ -141,12 +150,12 @@ public class GamePanel extends JPanel implements ActionListener{
         }
     }
     public void pause(Graphics g){
-        Image image = new ImageIcon("img/pause.png").getImage();
+        Image image = new ImageIcon("img/play.png").getImage();
         int x = (WIDTH - image.getWidth(null)) / 2;
         int y = (HEIGHT - image.getHeight(null)) / 2;
         g.drawImage(image, x, y, null);
 
-        String pauseInfo = "Press space to continue";
+        String pauseInfo = "Press space to start";
         var font = new Font("Rubik Bold", Font.PLAIN, 20);
         g.setColor(new Color(0x65C27B));
         g.setFont(font);
@@ -157,32 +166,53 @@ public class GamePanel extends JPanel implements ActionListener{
         g.drawString(pauseInfo, x, image.getHeight(null) + y + 40);
     }
     public void gameOver(Graphics g){
+        var g2 = (Graphics2D) g;
         timer.stop();
         Image image = new ImageIcon("img/game-over.png").getImage();
         int x = (WIDTH - image.getWidth(null)) / 2;
-        int y = 40;
-        g.drawImage(image, x, y, null);
+        int y = 80;
+        g2.drawImage(image, x, y, null);
         String scoreInfo = "Score: " + score;
-        g.setColor(new Color(0x65C27B));
+        g2.setColor(new Color(0x65C27B));
 
         var font = new Font("Rubik Black", Font.PLAIN, 30);
-        g.setFont(font);
-        var g2 = (Graphics2D) g;
+        g2.setFont(font);
+
         FontRenderContext context = g2.getFontRenderContext();
         Rectangle2D bounds = font.getStringBounds(scoreInfo, context);
         x = (int)((WIDTH - bounds.getWidth()) / 2);
-        y =+ image.getHeight(null) + 100;
-        g.drawString(scoreInfo, x, y);
+        y += image.getHeight(this)  + 50;
+        g2.drawString(scoreInfo, x, y);
 
         GameFrame.setState(State.GAME_OVER);
-        if(score > current_high_score) {
+        if(score > current_high_score && score != 0) {
+            sound.play(SoundTypes.NEW_HIGH_SCORE);
             image = new ImageIcon("img/new-high-score.png").getImage();
-            x = (WIDTH - image.getWidth(null)) / 2;
-            y += bounds.getHeight() + 10;
-            g.drawImage(image, x, y, null);
+            x = (WIDTH - image.getWidth(this)) / 2;
+            y += bounds.getHeight();
+            g2.drawImage(image, x, y, null);
+            y += image.getHeight(this) + 40;
         }
+        else {
+            sound.play(SoundTypes.GAME_OVER);
+            y += bounds.getHeight() + 10;
+        };
+
+        var font2 = new Font("Rubik", Font.PLAIN, 25);
+        g2.setFont(font2);
+        g2.setColor(new Color(0x96D0A5));
+        String playAgainInfo = "Press space to play again.";
+        bounds = font2.getStringBounds(playAgainInfo, context);
+        x = (int)((WIDTH - bounds.getWidth()) / 2);
+        g2.drawString(playAgainInfo, x, y);
+        String exitInfo = "Press esc to exit to main menu.";
+        bounds = font2.getStringBounds(exitInfo, context);
+        x = (int)((WIDTH - bounds.getWidth()) / 2);
+        y += bounds.getHeight() + 10;
+        g2.drawString(exitInfo, x, y);
         addScoreToFile();
     }
+
     private void addScoreToFile(){
         String fileName = "leaderboard";
         Path path = Paths.get(fileName );

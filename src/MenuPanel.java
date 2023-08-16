@@ -1,3 +1,7 @@
+import Utils.Comparators;
+import Utils.Sound;
+import Utils.SoundTypes;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -20,9 +24,17 @@ public class MenuPanel extends JPanel {
     private final NickNamePanel nicknamePanel = new NickNamePanel();
     private final JPanel leaderboardPanel = new LeaderBoardPanel();
     private final OptionsPanel optionsPanel = new OptionsPanel();
-    private CardLayout cardLayout = new CardLayout();
-
+    private final CardLayout cardLayout = new CardLayout();
+    private Sound sound;
+    private final Runnable BEEP_SOUND =
+            (Runnable) Toolkit.getDefaultToolkit().getDesktopProperty("win.sound.exclamation");
     MenuPanel(){
+        try{
+            sound = new Sound();
+        }
+        catch(Exception e){
+            e.printStackTrace();
+        }
         addComponentListener(new ComponentAdapter() {
             @Override
             public void componentShown(ComponentEvent e) {
@@ -67,6 +79,7 @@ public class MenuPanel extends JPanel {
             newGame.setFont(font);
             var leaderboardButton = new JButton("Leaderboard".toUpperCase());
             leaderboardButton.setFont(font);
+            leaderboardButton.addMouseListener(new MouseSound());
             leaderboardButton.addActionListener(e->{
                 cardLayout.show(MenuPanel.this, "leaderboard_panel");
                 leaderboardTextArea.setText("");
@@ -83,14 +96,14 @@ public class MenuPanel extends JPanel {
             var exit = new JButton("Exit".toUpperCase());
             exit.setFont(font);
             buttonPanel.add(newGame);
-
-            newGame.addActionListener(e->{
-                cardLayout.show(MenuPanel.this, "nick_panel");
-            });
+            newGame.addMouseListener(new MouseSound());
+            newGame.addActionListener(e->cardLayout.show(MenuPanel.this, "nick_panel"));
             buttonPanel.add(leaderboardButton);
             buttonPanel.add(options);
+            options.addMouseListener(new MouseSound());
             options.addActionListener(e-> cardLayout.show(MenuPanel.this, "options_panel"));
             buttonPanel.add(exit);
+            exit.addMouseListener(new MouseSound());
             exit.addActionListener(e-> System.exit(0));
             c.gridx = 0;
             c.gridy = 1;
@@ -112,11 +125,13 @@ public class MenuPanel extends JPanel {
             nickname.setFont(font);
             var returnButton = new JButton("Return");
             returnButton.setFont(font);
+            returnButton.addMouseListener(new MouseSound());
             returnButton.addActionListener(e->{
                 cardLayout.show(MenuPanel.this, "main_panel");
             });
             var playButton = new JButton("Play");
             playButton.setFont(font);
+            playButton.addMouseListener(new MouseSound());
             playButton.addActionListener(e->{
                 GameFrame.setState(State.GAME);
                 GameFrame.changePanel();
@@ -135,13 +150,15 @@ public class MenuPanel extends JPanel {
             nickname.setHorizontalAlignment(JTextField.CENTER);
             add(nickname, c);
 
-            c.gridwidth = 1;
+            var gridLayout = new GridLayout(1, 2);
+            gridLayout.setHgap(10);
+            var buttonPanel = new JPanel(gridLayout);
             c.gridy = 2;
-            c.insets.set(10, 80,200, 10);
-            add(playButton, c);
-            c.gridx = 1;
-            c.insets.set(10, 10,200, 80);
-            add(returnButton, c);
+            c.insets.set(10, 80,200, 80);
+            buttonPanel.add(playButton);
+            buttonPanel.add(returnButton);
+
+            add(buttonPanel,c);
         }
 
         public String getText() {
@@ -188,7 +205,7 @@ public class MenuPanel extends JPanel {
             var returnButton= new JButton("Return");
             returnButton.setFont(font);
             add(returnButton, c);
-
+            returnButton.addMouseListener(new MouseSound());
             returnButton.addActionListener(e->{
                 cardLayout.show(MenuPanel.this, "main_panel");
             });
@@ -241,21 +258,40 @@ public class MenuPanel extends JPanel {
             c.fill = GridBagConstraints.BOTH;
             c.gridx = 0;
             c.gridy = 3;
-            c.insets.set(10, 80,200, 5);
+            c.gridwidth = 2;
+            c.insets.set(10, 80,150, 80);
+            var gridLayout = new GridLayout(1, 2);
+            gridLayout.setHgap(10);
+            var buttonPanel = new JPanel(gridLayout);
             JButton acceptButton = new JButton("Accept".toUpperCase());
             acceptButton.setFont(font);
+            acceptButton.addMouseListener(new MouseSound());
             acceptButton.addActionListener(e->{
                 sizeOption = (Option)sizeOptionCB.getSelectedItem();
                 speedOption = (Option)speedOptionCB.getSelectedItem();
+                String message = "All changes have been saved.";
+                BEEP_SOUND.run();
+                JOptionPane.showConfirmDialog(
+                        MenuPanel.this.getParent(),
+                        message,
+                        "Confirmation",
+                        JOptionPane.DEFAULT_OPTION,
+                        JOptionPane.INFORMATION_MESSAGE);
             });
-            add(acceptButton, c);
-            c.gridx = 1;
-            c.insets.set(10, 5,200, 80);
+            buttonPanel.add(acceptButton);
             JButton cancelButton = new JButton("Cancel".toUpperCase());
             cancelButton.setFont(font);
-            add(cancelButton, c);
-            cancelButton.addActionListener(e->cardLayout.show(MenuPanel.this, "main_panel"));
-
+            buttonPanel.add(cancelButton);
+            cancelButton.addMouseListener(new MouseSound());
+            cancelButton.addActionListener(e->{
+                cardLayout.show(MenuPanel.this, "main_panel");
+            });
+            add(buttonPanel, c);
+        }
+    }
+    class MouseSound extends MouseAdapter{
+        public void mouseEntered(MouseEvent e){
+            sound.play(SoundTypes.BUTTON_CLICK);
         }
     }
     public TreeMap<String, Integer> readLeaderboard(){

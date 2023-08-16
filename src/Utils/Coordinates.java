@@ -1,8 +1,10 @@
+package Utils;
+
 public class Coordinates {
     private int X = 0;
     private int Y = 0;
 
-    Coordinates(int x, int y){
+    public Coordinates(int x, int y){
         X = x;
         Y = y;
     }
